@@ -1,0 +1,4 @@
+# One IP address or domain per line.
+127.0.0.1
+localhost
+baidu.com

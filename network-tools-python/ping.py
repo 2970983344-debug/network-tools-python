@@ -1,7 +1,7 @@
+import locale
 import platform
 import re
 import subprocess
-import locale
 from dataclasses import dataclass
 
 
@@ -30,23 +30,28 @@ class PingResult:
 
 
 def ping_host(host, count=4, timeout=2):
+    """Run the system ping command with Windows locale compatibility."""
+    host = str(host or "").strip()
+    if not host:
+        return PingResult("", False, 0, 0, 100.0, None, "Host cannot be empty.")
+
     system = platform.system().lower()
     if system == "windows":
         command = ["ping", "-n", str(count), "-w", str(timeout * 1000), host]
     else:
         command = ["ping", "-c", str(count), "-W", str(timeout), host]
 
-    completed = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        encoding=locale.getpreferredencoding(False),
-        errors="replace",
-    )
-    output = "\n".join([completed.stdout, completed.stderr]).strip()
+    try:
+        completed = subprocess.run(command, capture_output=True, check=False)
+    except (FileNotFoundError, PermissionError, OSError) as exc:
+        return PingResult(host, False, count, 0, 100.0, None, str(exc))
+
+    output = _decode_output(completed.stdout + b"\n" + completed.stderr).strip()
     transmitted, received, loss = _parse_packet_stats(output, count)
     avg_ms = _parse_average_latency(output)
     success = completed.returncode == 0 or received > 0
+    if success and received == 0:
+        transmitted, received, loss = count, count, 0.0
 
     return PingResult(
         host=host,
@@ -116,3 +121,14 @@ def _normalize_ping_output(output):
         .replace("（", "(")
         .replace("）", ")")
     )
+
+
+def _decode_output(raw):
+    """Decode ping output emitted by Chinese or English Windows systems."""
+    encodings = [locale.getpreferredencoding(False), "mbcs", "gbk", "utf-8"]
+    for encoding in dict.fromkeys(encodings):
+        try:
+            return raw.decode(encoding)
+        except (LookupError, UnicodeDecodeError):
+            continue
+    return raw.decode("utf-8", errors="replace")

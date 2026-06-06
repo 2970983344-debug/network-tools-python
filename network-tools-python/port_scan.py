@@ -18,10 +18,56 @@ class DeviceResult:
     open_ports: list[int]
 
 
+def parse_port_spec(value, max_ports=1024):
+    """Parse ports such as ``80,443,8000-8010``."""
+    text = str(value or "").strip()
+    if not text:
+        raise ValueError("Port input cannot be empty.")
+
+    ports = set()
+    for part in text.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            start_text, end_text = part.split("-", 1)
+            if not start_text.isdigit() or not end_text.isdigit():
+                raise ValueError(f"Invalid port range: {part}")
+            start, end = int(start_text), int(end_text)
+            if start > end:
+                raise ValueError(f"Port range start is greater than end: {part}")
+            _validate_port(start)
+            _validate_port(end)
+            ports.update(range(start, end + 1))
+        else:
+            if not part.isdigit():
+                raise ValueError(f"Invalid port: {part}")
+            port = int(part)
+            _validate_port(port)
+            ports.add(port)
+
+        if len(ports) > max_ports:
+            raise ValueError(f"Too many ports. Maximum allowed: {max_ports}")
+
+    if not ports:
+        raise ValueError("No valid ports were provided.")
+    return sorted(ports)
+
+
+def _validate_port(port):
+    if port < 1 or port > 65535:
+        raise ValueError(f"Port out of range: {port}")
+
+
 def check_port(host, port, timeout=1.5):
+    host = str(host or "").strip()
+    if not host:
+        return PortResult("", port, False, "host cannot be empty")
     try:
         with socket.create_connection((host, port), timeout=timeout):
             return PortResult(host, port, True, "connection successful")
+    except socket.gaierror:
+        return PortResult(host, port, False, "invalid host or DNS resolution failed")
     except socket.timeout:
         return PortResult(host, port, False, "timeout")
     except OSError as exc:
@@ -29,6 +75,8 @@ def check_port(host, port, timeout=1.5):
 
 
 def scan_ports(host, ports, timeout=1.5, workers=64):
+    if not ports:
+        return []
     results = []
     with ThreadPoolExecutor(max_workers=min(workers, max(1, len(ports)))) as executor:
         future_map = {

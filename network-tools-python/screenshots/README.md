@@ -1,17 +1,22 @@
-# Screenshots
+# 项目截图说明
 
-本目录用于保存项目运行截图。建议截图内容：
+此目录用于存放 GitHub、简历和软件著作权申请材料中的运行截图。
 
-1. `python main.py ping baidu.com`
-2. `python main.py ports baidu.com --ports 80,443,3306`
-3. `python main.py dns baidu.com`
-4. `python main.py scan 192.168.1.0/24 --ports 80,443`
-5. `python main.py report baidu.com --output network_report.md`
+建议截图并按以下名称保存：
 
-截图命名建议：
+1. `01-gui-home.png`：GUI 主界面
+2. `02-ping-result.png`：Ping 检测结果
+3. `03-port-scan.png`：端口范围扫描结果
+4. `04-dns-check.png`：DNS 解析结果
+5. `05-ip-lookup.png`：IP 归属地查询结果
+6. `06-speed-test.png`：网络测速结果
+7. `07-html-report.png`：HTML 报告页面
+8. `08-cli-help.png`：命令行帮助信息
 
-- `01-ping.png`
-- `02-port-scan.png`
-- `03-dns-check.png`
-- `04-lan-scan.png`
-- `05-report.png`
+在项目目录运行 GUI：
+
+```bash
+python main.py gui
+```
+
+完成相应操作后，可使用 Windows 截图工具保存到本目录。

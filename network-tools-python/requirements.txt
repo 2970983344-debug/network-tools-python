@@ -1,1 +1,4 @@
-# Network Tools Python v2.0 uses only the Python standard library.
+# Optional: enables full server-based download speed testing.
+# The application automatically falls back to Python's standard library when
+# this package is unavailable.
+speedtest-cli>=2.1.3
